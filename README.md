@@ -10,4 +10,4 @@ Point 1: Left wing apex
 Point 2: Right wing apex
 Point 3: Left wing base
 Point 4: Right wing base
-Point 5: Head base (not used in winglength analysis codes.
+Point 5: Head base (not used in winglength analysis codes).
