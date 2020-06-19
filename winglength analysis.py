@@ -1,25 +1,26 @@
 """
-    Winglength Analysis
-                                                        By Siddharth S. Sane
-                                                        
-    This code calculates winglengths from an input csv file and plots it as 
-    a function of frame number. It also calculates the average winglength,
-    range, mean deviation, and standard deviation. Also, because I'm easily
-    confused, I refer to standard deviation as 'standard variance' so that
-    it's not confused with 'mean deviation'. Also, any variable prefixed 'r'
-    refers to 'right'; any variable prefixed with 'l' refers to 'left'.
-    
-    Use the following convention of points:
-        Point 1 = Left wing apex
-        Point 2 = Right wing apex
-        Point 3 = Left wing base
-        Point 4 = Right wing base
-        Point 5 = Head base (not used in this code)
-    
-    This is not an elegant code, but it does the job. 
+Winglength Analysis #2
+                                                    By Siddharth S. Sane
+                                                    
+This code calculates winglengths from an input csv file and plots it as 
+a function of frame number. It also calculates the average winglength,
+range, mean deviation, and standard deviation. Also, because I'm easily
+confused, I refer to standard deviation as 'standard variance' so that
+it's not confused with 'mean deviation'. I also managed to halve the 
+number of variables with one caveat of convention: in a duplet, [0] means
+'left' and [1] means 'right'. Comments have also been cleaned substantially.
+
+Use the following convention of points:
+    Point 1 = Left wing apex
+    Point 2 = Right wing apex
+    Point 3 = Left wing base
+    Point 4 = Right wing base
+    Point 5 = Head base (not used in this code)
+
+Hopefully this code is slightly more elegant. 
+Note: Keyboard interrupts don't work in the command line input!
+If you accidentally press Ctrl-C, you'll have to restart your kernel by pressing Ctrl-.
  """
-
-
 
 import pandas as pd
 import os
@@ -27,188 +28,150 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def length(x0,x1,y0,y1,z0,z1):
-    l = np.sqrt((x1-x0)**2+(y1-y0)**2+(z1-z0)**2)
+def length(x,y,z):
+    l = np.sqrt((x[1]-x[0])**2+(y[1]-y[0])**2+(z[1]-z[0])**2)
     return l
-#Handy function that calculates lengths the Pythagorean way
-    
-lx = [0,0]
-ly = [0,0]
-lz = [0,0]
-rx = [0,0]
-ry = [0,0]
-rz = [0,0]
-# tmp arrays to hold current XYZ values: tmp[0] = wing apex(XYZ),
-# tmp[1] = wing base (XYZ). 
 
-ll = []
-rl = []
+# Handy function that calculates lengths the Pythagorean way, 
+# and takes list inputs - each list[i] = [wing coord, base coord]
+    
+l = [[0,0] , [0,0] , [0,0]] # Left wing XYZ list
+r = [[0,0] , [0,0] , [0,0]] # Right wing XYZ list
+
+# tmp arrays to hold current XYZ values: l/r[i][j] = x_i for l/r wing/base(0/1)
+
+lengths = [[],[]]
+
 #Arrays that store length values
 
-#First test file: 
-#fly1_asym_cutwing1_1_csv_xyzpts.csv
-#test directory: C:/Users/Dinesh/Downloads
+rdir = str(input('Directory containing files: ')) # input directory name here.
 
-rdir = 'C:/Users/Dinesh/Downloads' #str(input('Directory containing files: '))
-
-# Hard-coded present working directory. Uncomment the bit after the quotes 
-# to make this process more varable-directory friendly, or change the directory
-# to the location where your csv files are stored. This will be changed
-# in the future to allow for measuring the error of multiple files.
+# Right directory - the one that contains the csv files. This can later be
+# changed to accomodate multiple csv files
 
 
 try:
-    if os.getcwd() != rdir:
-        os.chdir(rdir)
-        print('PWD is now ', os.getcwd())
-        os.listdir(rdir)
-        print()
-        file = str(input('Csv file: ')) # Input the file name here.
-    # Check if the current directory is the specified directory. If not, change it.
-    
-
+    os.chdir(rdir)
+    file = str(input('Csv file: ')) # Input the file name here.
+    print()
+    # Check if the current directory is the specified directory. If not, change
+    # it. Then, input the file name.
 
     df = pd.read_csv(file)
-    print('csv file is: ', file)
-    print()
     rows = len(df.axes[0])
+    
+    # Read the inputed csv file and count the number of rows in it.
+    
     """THIS PART OF THE CODE PLOTS WING LENGTHS"""
-    for i in range(rows):
-        lx[0] = df.loc[i, 'pt1_X']
-        lx[1] = df.loc[i, 'pt3_X']
-        ly[0] = df.loc[i, 'pt1_Y']
-        ly[1] = df.loc[i, 'pt3_Y']
-        lz[0] = df.loc[i, 'pt1_Z']
-        lz[1] = df.loc[i, 'pt3_Z']
-        rx[0] = df.loc[i, 'pt2_X']
-        rx[1] = df.loc[i, 'pt4_X']
-        ry[0] = df.loc[i, 'pt2_Y']
-        ry[1] = df.loc[i, 'pt4_Y']
-        rz[0] = df.loc[i, 'pt2_Z']
-        rz[1] = df.loc[i, 'pt4_Z']
-        ll.append(length(lx[0],lx[1],ly[0],ly[1],lz[0],lz[1]))
-        rl.append(length(rx[0],rx[1],ry[0],ry[1],rz[0],rz[1]))
-        # This long for loop sets all the variables, calculates the length,
+
+    for j in range(rows):
+        for i in range(3):
+            l[i][0] = df.loc[j, df.columns[i]] #XYZ for point 1
+            r[i][0] = df.loc[j, df.columns[i+3]] #XYZ for point 2
+            l[i][1] = df.loc[j, df.columns[i+6]] #XYZ for point 3
+            r[i][1] = df.loc[j, df.columns[i+9]] #XYZ for point 4
+        lengths[0].append(length(l[0], l[1], l[2]))
+        lengths[1].append(length(r[0], r[1], r[2]))
+        # This for loop sets all the variables, calculates the length,
         # and inputs left and right lengths into the array.
-        
     
-    
-    # Plot all values, then tell me it's done.
     
     """THIS PART OF THE CODE CALCULATES AVERAGE WING LENGTH AND RANGE AND M.D."""
-    lav = 0
-    rav = 0
+    av = [0,0]
     
     for i in range(rows):
-        lav += ll[i]
-        rav += rl[i]
-    lav = lav/rows
-    rav = rav/rows
-    print('Average left wing length = ', lav)
-    print('Average right wing length = ', rav)
+        av[0] += lengths[0][i]
+        av[1] += lengths[1][i]
+    av[0] = av[0]/rows
+    av[1] = av[1]/rows
+    print('Average left wing length = ', av[0])
+    print('Average right wing length = ', av[1])
     # Calculate & print left and right wing length average
     
-    lrange = [min(ll), max(ll)]
-    rrange = [min(rl), max(rl)]
-    lr = lrange[1] - lrange[0]
-    rr = rrange[1] - rrange[0]
-    lbigger = max([np.abs(lav-lrange[0]), np.abs(lav-lrange[1])])
-    rbigger = max([np.abs(rav-rrange[0]), np.abs(rav-rrange[1])])
+    ranges = [[min(lengths[0]), max(lengths[0])],[min(lengths[1]), max(lengths[1])]]
+    lr = ranges[0][1] - ranges[0][0]
+    rr = ranges[1][1] - ranges[1][0]
+    lbigger = max([np.abs(av[0]-ranges[0][0]), np.abs(av[0]-ranges[0][1])])
+    rbigger = max([np.abs(av[1]-ranges[1][0]), np.abs(av[1]-ranges[1][1])])
     
     print('Left winglength range = ', lr)
     print('Right winglength range = ', rr)
-    print('Maximum left wing deviation = ', lbigger, '(', 100*lbigger/lav, '% error)')
-    print('Maximum right wing deviation = ', rbigger, '(', 100*rbigger/rav, '% error)')
+    print('Maximum left wing deviation = ', lbigger, '('+ str(100*lbigger/av[0])+ '% error)')
+    print('Maximum right wing deviation = ', rbigger, '('+ str(100*rbigger/av[1])+ '% error)')
     
     #Print left and right winglength ranges and maximum deviation
     
-    lsd = 0
-    rsd = 0
-    lsv = 0
-    rsv = 0
-    rdev = []
-    ldev = []
-    rvar = []
-    lvar = []
-    for i in range(rows):
-        lsd += np.sqrt((lav - ll[i])**2)
-        ldev.append(np.sqrt((lav - ll[i])**2))
-        rsd += np.sqrt((rav - rl[i])**2)
-        rdev.append(np.sqrt((rav - rl[i])**2))
-        lsv += (lav - ll[i])**2
-        lvar.append((lav - ll[i])**2)
-        rsv += (rav - rl[i])**2
-        rvar.append((rav - rl[i])**2)
+    sd = [0,0]
+    sv = [0,0]
+    dev = [[],[]]
+    var = [[],[]]
+    
+    # Deviation, variance lists to store deviation and variance values.
+    
+    for j in range(2):
+        for i in range(rows):
+            sd[j] += np.abs(av[j] - lengths[j][i])
+            dev[j].append(np.abs(av[j]-lengths[j][i]))
+            sv[j] += (av[j] - lengths[j][i])**2
+            var[j].append((av[j] - lengths[j][i])**2)        
+        sd[j] = sd[j]/rows
+        sv[j] = np.sqrt(sv[j]/rows)
 
-    lsd = (lsd/rows)
-    rsd = (rsd/rows)
-    lsv = (np.sqrt(lsv/rows))
-    rsv = (np.sqrt(rsv/rows))
+    # All of these variables have dimensions of length and shouldn't be measured in percentages!
     
-    # All of these variables have dimensions of length and shouldn't be measured
-    # in percentages!
+    sderr = [(sd[0]/av[0]) * 100 , (sd[1]/av[1]) * 100]
+    sverr = [(sv[0]/av[0]) * 100 , (sv[1]/av[1]) * 100]
     
-    lsderr = (lsd/lav) * 100
-    rsderr = (rsd/rav) * 100
-    lsverr = (lsv/lav) * 100
-    rsverr = (rsv/rav) * 100
+    # THESE variables are dimensionless fractions and can be measured in percentages!
     
-    # THESE variables are dimensionless fractions and can, in fact, be measured
-    # in percentages!
-    
-    print('Left wing mean deviation = ', lsd, '(', lsderr, '% error)')
-    print('Right wing mean deviation = ', rsd, '(', rsderr, '% error)')
-    print('Left wing standard deviation = ', lsv, '(', lsverr, '% error)')
-    print('Right wing standard deviation = ', rsv, '(',rlsverr, '% error)')
-    
-
+    print()
+    print('Left wing mean deviation = ', sd[0], '('+ str(sderr[0])+ '% error)')
+    print('Right wing mean deviation = ', sd[1], '('+ str(sderr[1])+ '% error)')
+    print('Left wing standard deviation = ', sv[0], '('+ str(sverr[0])+ '% error)')
+    print('Right wing standard deviation = ', sv[1], '('+ str(sverr[1])+ '% error)')
     
     """THIS PART OF THE CODE CREATES LINES AS VISUAL GUIDES"""
     
-    laverage = []
-    raverage = []
-    lminimum = []
-    lmaximum = []
-    rminimum = []
-    rmaximum = []
-    lsdev = []
-    rsdev = []
-    lsvar = []
-    rsvar = []
+    average = [[],[]]
+    minimum = [[],[]]
+    maximum = [[],[]]
+    sdev = [[],[]]
+    svar = [[],[]]
     
     for i in range(rows):
-        laverage.append(lav)
-        raverage.append(rav)
-        lminimum.append(lrange[1])
-        lmaximum.append(lrange[0])
-        rminimum.append(rrange[1])
-        rmaximum.append(rrange[0])
-        lsdev.append(lsd/100)
-        rsdev.append(rsd/100)
-        lsvar.append(lsv/100)
-        rsvar.append(rsv/100)
-    
-    #Create line arrays for visual guides
+        for j in range(2):
+            average[j].append(av[j])
+            minimum[j].append(ranges[j][0])
+            maximum[j].append(ranges[j][1])
+            sdev[j].append(sd[j])
+            svar[j].append(sv[j])
     
     """THIS PART OF THE CODE PLOTS STUFF"""
+    fig1 = plt.figure(1)
+    plt.plot(range(rows), lengths[0], 'b', lengths[1], 'y')
+    plt.plot(range(rows), average[0], 'b', average[1], 'y')
+    plt.plot(range(rows), maximum[0], 'g', maximum[1], 'g')
+    plt.plot(range(rows), minimum[0], 'r', minimum[1], 'r')
+    plt.ylabel('Length(mm)')
+    fig1.show()
+
+    # This plot contains left and right wing lengths plus visual guides.
     
-    plt.plot(range(rows), ll)
-    plt.plot(range(rows), rl)
-    plt.plot(range(rows), lmaximum)
-    plt.plot(range(rows), rmaximum)
-    plt.plot(range(rows), lminimum)
-    plt.plot(range(rows), rminimum)
-    plt.plot(range(rows), laverage)
-    plt.plot(range(rows), raverage)
-    plt.plot(range(rows), ldev, 'g', rdev, 'b')
-    plt.plot(range(rows), lsdev, 'g', rsdev, 'b')
-
-
+    fig2 = plt.figure(2)
+    plt.plot(range(rows), dev[0], 'g', dev[1], 'b')
+    plt.plot(range(rows), sdev[0], 'g', sdev[1], 'b')
+    plt.ylabel('Absolute deviation in length(mm)')
+    fig2.show()
+    
+    fig3 = plt.figure(3)
+    plt.plot(range(rows), var[0], 'g', var[1], 'b')
+    plt.plot(range(rows), (svar[0])**2, 'g', svar[1], 'b')
+    plt.ylabel('Root-square deviation in length(mm)')
+    fig3.show
+    
+    # This plot contains left and right mean and standard deviations, plus visual guides.
 
 except FileNotFoundError:
     print('Not a file or directory!')
-except KeyboardInterrupt:
-    print('Manual shutdown!')
-# First try-except prevents me from inputting random stuff into the file or directory
-# input. Second allows me to manually shut down the code by using Ctrl-C
-# (Which, in the LINUX lingo, shuts down a running code).
+    
+# First try-except prevents me from inputting random stuff into the file or directory input
