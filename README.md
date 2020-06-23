@@ -1,7 +1,7 @@
 # Fly-analysis
 Contains programs to analyse various aspects of a tethered fly
 
-So far, only codes that analyse winglengths have been added. There are conventions to be followed here, but hopefully, this can be made more
+So far, only codes that analyse winglengths have been added. There are conventions to be followed here but hopefully this can be made more
 unbreakable in the future.
 
 Conventions:
