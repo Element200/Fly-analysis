@@ -1,7 +1,3 @@
-"""         Get files
-    Finds all relevent files in the folder and picks a method
-    of classifying points based on a .txt file
-    """
 import os
 import pandas as pd
 import numpy as np
@@ -253,18 +249,3 @@ class fly(object):
         left = statistic(left_lengths); right = statistic(right_lengths)
         left.plot_vals()
         right.plot_vals()
-    
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
