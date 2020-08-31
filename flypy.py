@@ -12,37 +12,6 @@ import matplotlib.pyplot as plt
 
 CWD = os.getcwd() # As long as you start in your default directory, this code will work fine.
 
-class statistic(object):
-    """This class just contains a bunch of statistical operations that are useful
-        for statistical analysis of anything. It takes an array as an input and spits 
-        out averages, means, standard deviation, and so on.
-    """
-    def __init__(self, array):
-        self.array = array
-    def get_range(self):
-        return max(self.array)-min(self.array)
-    def get_mean(self):
-        return np.nanmean(self.array)
-    def get_dev(self):
-        return [np.abs(element-self.get_mean()) for element in self.array]
-    def get_stdev(self):
-        return np.nanmean(self.get_dev())
-    def get_stderr(self):
-        return self.get_stdev()/self.get_mean()
-    def get_maxerr(self):
-        mean = self.get_mean()
-        return max(np.abs(max(self.array)-mean), np.abs(min(self.array)-mean))/mean
-    def plot_vals(self):
-        array = self.array
-        plt.plot(array, 'b')
-        plt.plot([max(array)]*len(array), 'g')
-        plt.plot([min(array)]*len(array), 'r')
-        plt.plot([self.get_mean()]*len(array), 'y')
-        plt.show()
-        
-        #Plots all winglengths. Doesn't plot errors, though
-        
-
 def get_3d_coord_files(mode, directory):
     """
     Parameters
@@ -67,6 +36,9 @@ def get_3d_coord_files(mode, directory):
             if file.endswith('csv') and not(file.startswith('0')):
                 if mode == 'asym':
                     if (mode in file) and not('sc' in file): #This bit is necessary because slit sc files have the extension "_asym_sc_"
+                        csvholder.append(file)
+                elif mode == 'halt':
+                    if mode in file or 'load' in file:
                         csvholder.append(file)
                 else:
                     if mode in file:
@@ -133,9 +105,38 @@ def find_file(file_name):
         for file in files:
             if file == file_name:
                 return os.path.join(root,file)
-    raise FileNotFoundError
-    
+            
+    # raise FileNotFoundError
 
+class statistic(object):
+    """This class just contains a bunch of statistical operations that are useful
+        for statistical analysis of anything. It takes an array as an input and spits 
+        out averages, means, standard deviation, and so on.
+    """
+    def __init__(self, array):
+        self.array = array
+    def get_range(self):
+        return max(self.array)-min(self.array)
+    def get_mean(self):
+        return np.nanmean(self.array)
+    def get_dev(self):
+        return [np.abs(element-self.get_mean()) for element in self.array]
+    def get_stdev(self):
+        return np.nanmean(self.get_dev())
+    def get_stderr(self):
+        return self.get_stdev()/self.get_mean()
+    def get_maxerr(self):
+        mean = self.get_mean()
+        return max(np.abs(max(self.array)-mean), np.abs(min(self.array)-mean))/mean
+    def plot_vals(self):
+        array = self.array
+        plt.plot(array, 'b')
+        plt.plot([max(array)]*len(array), 'g')
+        plt.plot([min(array)]*len(array), 'r')
+        plt.plot([self.get_mean()]*len(array), 'y')
+        plt.show()
+        
+        #Plots all winglengths. Doesn't plot errors, though
     
 class fly(object):
     """
@@ -166,11 +167,11 @@ class fly(object):
             self.flynumber = flynumber
             self.trial = trial        
             print('You are viewing fly'+ str(flynumber)+'_'+str(trial), 'in', str(mode), 'mode.')
-            assert mode == 'asym' or mode == 'sc' or mode == 'epi' or mode == 'halt', "Unknown mode"
+            assert mode in ['asym', 'sc', 'epi', 'halt'], "Unknown mode"
             pointnames = ['lwapex','rwapex','lwbase','rwbase','fixed','lhapex','rhapex','lhbase','rhbase']
-            if mode == 'asym' or mode == 'sc':
+            if mode in ['asym', 'sc']:
                 self.points = {pointnames[i]:int(instructions[pointnames[i]]) for i in range(5)}
-            elif mode == 'epi' or mode == 'halt':
+            else:
                 self.points = {pointnames[i]:int(instructions[pointnames[i]]) for i in range(9)}
         
         except FileNotFoundError: 
@@ -178,41 +179,44 @@ class fly(object):
     
     def __str__(self):
         """Makes representing classes easy"""
-        return "Fly"+ self.flynumber, "in", self.trial, "in mode:", self.mode + "."
+        string = "fly"+ str(self.flynumber)+ "_"+ str(self.trial) + " in mode: "+ str(self.mode) + "."
+        return string
     
     def open_csv(self):
         """
         Opens the csv file corresponding to the appropriate fly number and trial
-
-        Parameters
-        ----------
-        flynumber : int
-            The number of the fly - for instance fly1, fly2, and so on.
-        trial : string
-            cutwing1, cutwing2, etc. Ignore the number of times the experiment has been done;
-            don't type in "intactwings_1" or something like that, just type "intactwings".
-        You only need specify these if you don't want the program evaluating the default fly for whatever reason.
+        
         Returns
         -------
         The Pandas dataframe from the csv file.
 
         """
-        flynumber = self.flynumber
-        trial = self.trial
-        files = get_3d_coord_files(self.mode, CWD)
-        csv = None # csv is NoneType by default, finding 
-        for file in files:
-            index = file.index('fly') + 3 # +3 because fly has 3 letters, and at this position, the fly number will be declared.
-            if file[index] == str(flynumber):
-                if trial in file:
-                    csv = file # Set the csv file equal to the file we found. 
-        if type(csv) != None:
-            self.file_name = find_file(csv) # New global variable, initiated only if open_csv() is called
-            df = pd.read_csv(self.file_name)
+        try:
+            flynumber = self.flynumber
+            trial = self.trial
+            files = get_3d_coord_files(self.mode, CWD)
+            csv = None # csv is NoneType by default, finding 
+            for file in files:
+                index = file.index('fly') + 3 # +3 because 'fly' has 3 letters, and at this position, the fly number will be declared.
+                if file[index] == str(flynumber):
+                    if trial in file:
+                        csv = file # Set the csv file equal to the file we found. 
+            if type(csv) != None:
+                print("A file was found!")
+                print(csv)
+                
+                self.file_name = find_file(csv) # New global variable, initiated only if open_csv() is called
+                df = pd.read_csv(self.file_name)
+                return df
+            else:
+                print("No file found!")
+    
+        except FileNotFoundError:
+            print("No file found in module open_csv")
             
-            return df
-        print("No file found") # You'll never get to this if the if statement is true
-        return
+            print("The file name is:", self.file_name)
+            raise FileNotFoundError
+            
         
     def get_points(self):
         """
@@ -223,23 +227,27 @@ class fly(object):
         A list with sublists corresponding to all the point data in coordinate format
 
         """
-        df = self.open_csv() # Get the Pandas dataframe
-        rows = len(df.axes[0])
-        self.rows = rows # New global variable
-        points = []
-        for i in range(5+(self.mode == 'epi' or self.mode == 'halt')*4): # The thing within the range(parentheses) just means "5 if the mode is not 'epi' or 'halt', 9 otherwise"
-            points.append([])
-        print("Rows:", rows)
-        numpoints = 5 + (self.mode == 'epi' or self.mode == 'halt')*4
-        for j in range(numpoints):
-            for i in range(rows):
-                x = df.loc[i, df.columns[3*j]]
-                y = df.loc[i, df.columns[3*j+1]]
-                z = df.loc[i, df.columns[3*j+2]]
-                points[j].append((x,y,z)) # XYZ data is stored in tuples, not lists. Makes things easier to read, plus it's faster.
-        points_dictionary = {key : points[self.points[key]-1] for key in self.points} # self.points[key] - 1 because counting from 0 and all that mess.
-        # Points dictionary maps the name of a point to the list of points corresponding to the name. For instance, 'lwapax' in 'epi' will be mapped to points[0], the first in the points list
-        return points_dictionary
+        try:
+            df = self.open_csv() # Get the Pandas dataframe
+            rows = len(df.axes[0])
+            self.rows = rows # New global variable
+            points = []
+            for i in range(5+(self.mode == 'epi' or self.mode == 'halt')*4): # The thing within the range(parentheses) just means "5 if the mode is not 'epi' or 'halt', 9 otherwise"
+                points.append([])
+            print("Rows:", rows); print()
+            numpoints = 5 + (self.mode == 'epi' or self.mode == 'halt')*4
+            for j in range(numpoints):
+                for i in range(rows):
+                    x = df.loc[i, df.columns[3*j]]
+                    y = df.loc[i, df.columns[3*j+1]]
+                    z = df.loc[i, df.columns[3*j+2]]
+                    points[j].append((x,y,z)) # XYZ data is stored in tuples, not lists. Makes things easier to read, plus it's faster.
+            points_dictionary = {key : points[self.points[key]-1] for key in self.points} # self.points[key] - 1 because counting from 0 and all that mess.
+            # Points dictionary maps the name of a point to the list of points corresponding to the name. For instance, 'lwapax' in 'epi' will be mapped to points[0], the first in the points list
+            return points_dictionary
+        except FileNotFoundError:
+            print("No file found in module get_points")
+            raise FileNotFoundError
     
     def find_winglengths(self):
         """
@@ -253,19 +261,21 @@ class fly(object):
         """
         def length(v1, v2):
             """Handy function to calculate lengths given two tuples."""
-            return ((v1[0]-v2[0])**2+(v1[1]-v2[1])**2+(v1[2]-v2[2])**2)**0.5 
-        points_dictionary = self.get_points()
-        left_lengths = []
-        right_lengths = [] # Create two variables to store length data
-        for i in range(self.rows):
-            left_lengths.append(length(points_dictionary['lwapex'][i], points_dictionary['lwbase'][i])) # Calculate and append
-            right_lengths.append(length(points_dictionary['rwapex'][i], points_dictionary['rwbase'][i])) # lengths to both lists
-        return left_lengths, right_lengths # return the two lists as a tuple. Remember to assign two variables while calling this function
-    
+            return ((v1[0]-v2[0])**2+(v1[1]-v2[1])**2+(v1[2]-v2[2])**2)**0.5
+        try:
+            points_dictionary = self.get_points()
+            left_lengths = []
+            right_lengths = [] # Create two variables to store length data
+            for i in range(self.rows):
+                left_lengths.append(length(points_dictionary['lwapex'][i], points_dictionary['lwbase'][i])) # Calculate and append
+                right_lengths.append(length(points_dictionary['rwapex'][i], points_dictionary['rwbase'][i])) # lengths to both lists
+            return left_lengths, right_lengths # return the two lists as a tuple. Remember to assign two variables while calling this function
+        except FileNotFoundError:
+            print("File not found in module find_winglengths")
     def print_statistics(self):
         """
         This function just prints out the statistical data
-        Returns: Nothing, its only job is to print
+        Returns nothing, its only job is to print
         """
         left_lengths, right_lengths = self.find_winglengths()
         left = statistic(left_lengths); right = statistic(right_lengths)
@@ -279,6 +289,12 @@ class fly(object):
         print("Right standard error:", right.get_stderr())
         print("Left maximum error:", left.get_maxerr())
         print("Right maximum error:", right.get_maxerr())
+    def get_errors(self):
+        left_lengths, right_lengths = self.find_winglengths()
+        left = statistic(left_lengths); right = statistic(right_lengths)
+        self.left_averr, self.right_averr, self.left_maxerr, self.right_maxerr = left.get_stderr(), right.get_stderr(), left.get_maxerr(), right.get_maxerr()
+        return self.left_averr, self.right_averr, self.left_maxerr, self.right_maxerr
+    
     def plot_statistics(self):
         """
         Plots the aforementioned statistical data.
