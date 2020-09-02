@@ -127,7 +127,9 @@ class statistic(object):
         return self.get_stdev()/self.get_mean()
     def get_maxerr(self):
         mean = self.get_mean()
-        return max(np.abs(max(self.array)-mean), np.abs(min(self.array)-mean))/mean
+        filtered = [element for element in self.array if not np.isnan(element)]
+        return max(np.abs(max(filtered)-mean), np.abs(min(filtered)-mean))/mean 
+    # Subtracts the lowest and highest values from the means, compares their absolute values, and takes the higher of the two and divides it by the mean to yield the maximum error
     def plot_vals(self):
         array = self.array
         plt.plot(array, 'b')
