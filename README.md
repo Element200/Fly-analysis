@@ -15,7 +15,7 @@ How to write a data_organization file:
           mode='asym'
           # (just for example, you could also set mode equal to 'epi', 'sc', or 'halt'; but any other names would create an error.
 4) The rest of the arguments set pointnames to points like so:
-          pointname=<number>
+          pointname=number
           # Example:
           lwapex=1
           # The number must be an int and the pointname must have one of the following names: 'lwapex','rwapex','lwbase','rwbase','fixed',lhapex','rhapex','lwbase', or 'rhbase'; 
